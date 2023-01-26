@@ -1,0 +1,125 @@
+#!/usr/bin/env node
+
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', async (data) => {
+    console.log(await main(data.replace(/\n$/, '')));
+    process.exit();
+});
+
+const main = async (input, debug) => {
+
+    if (!input) process.exit();
+
+    input += '\0';
+
+    //debug tool
+    const { default: print } = await import('./print.mjs');
+
+    const windowSize = debug ? 10 : 3000;
+    let output = '';
+
+    let
+        windowStart = 0,
+        searchStartPointer = windowStart + windowSize - 2,
+        searchPointer = windowStart + windowSize - 2,
+        lookPointer = windowStart + windowSize - 1;
+
+    const data = [...new Array(windowSize - 1), ...input.split('')];
+    data[data.length - 1] = null;
+
+    // loop through every character in the string
+    while (data[lookPointer]) {
+
+        let distance = 0,
+            tempDistance = 0,
+            length = 0
+        tempLength = 0;
+
+        if (debug && data.length > windowSize) {
+            console.log('initial: ');
+            print(data, windowStart, lookPointer, lookPointer + 1, searchStartPointer, searchPointer)
+        }
+
+        // find longest sequenze that has a match in searchBuffer
+
+        while (data[searchStartPointer] && searchStartPointer >= windowStart) {
+
+            if (data[searchStartPointer] === data[lookPointer]) {
+                tempDistance = lookPointer - searchStartPointer;
+                searchPointer = searchStartPointer;
+
+                while (data[searchPointer] === data[lookPointer]) {
+
+                    if (tempLength >= length) {
+                        length++;
+                        distance = tempDistance;
+                    }
+                    tempLength++
+                    windowStart++;
+                    searchPointer++;
+                    lookPointer++;
+
+                    if (debug && data.length > windowSize) {
+                        console.log('inside:');
+                        print(data, windowStart, lookPointer, lookPointer + 1, searchStartPointer, searchPointer)
+                        // console.log('TD: ' + tempDistance);
+                        // console.log('TL: ' + tempLength);
+                    }
+                }
+
+                if (data[lookPointer] !== null) {
+                    windowStart -= tempLength;
+                    lookPointer -= tempLength;
+                    tempLength = 0;
+                }
+            }
+
+            searchStartPointer--;
+
+            if (debug && data.length > windowSize) {
+                console.log('outside:');
+                print(data, windowStart, lookPointer, lookPointer + 1, searchStartPointer, searchPointer)
+            }
+
+        }
+
+        windowStart += length;
+        lookPointer += length;
+
+        output += `<${distance},${length},${data[lookPointer] ? data[lookPointer] : '\0'}>`;
+
+        // move window and pointers
+        windowStart++;
+        searchStartPointer = windowStart + windowSize - 2;
+        searchPointer = windowStart + windowSize - 2;
+        lookPointer = windowStart + windowSize - 1;
+
+
+        if (debug && data.length > windowSize) {
+            console.log()
+            console.log(output)
+            console.log()
+
+            console.log('final: ');
+            print(data, windowStart, lookPointer, lookPointer + 1, searchStartPointer, searchPointer)
+        }
+    }
+
+    return output;
+}
+
+if (process.argv[2]) {
+    const debugFlag = process.argv.indexOf('-d');
+    if (debugFlag > -1) process.argv.splice(debugFlag, 1);
+    if (debugFlag > -1) {
+        if (process.argv[2] && process.argv[2].length > 13) {
+            console.log('13 Characters max when debugging');
+            process.exit();
+        }
+        else if (!process.argv[2]) {
+            console.log('No input given or file as input - neither not possible in debug mode')
+        }
+    }
+    main(process.argv[2], debugFlag > -1)
+        .then(console.log).finally(() => process.exit());
+};
