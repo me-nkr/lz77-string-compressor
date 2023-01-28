@@ -6,6 +6,9 @@
 ## **Usage**
 
 ### **Compressing**
+First of all clone the repository using `git clone https://github.com/me-nkr/lz77-string-compressor.git`
+
+
 You can use the compress a string using the `compress` script. You can execute the sript in 2 ways and the script has two modes.
 
 ### **Modes**
@@ -18,3 +21,25 @@ You can use the compress a string using the `compress` script. You can execute t
     - you can only pass input as an argument in this mode like `./compress -d 'hello hello'`
     - this mode has a 13 character limit
     - this mode will print an step by step illustration of how the algorithm works with sliding window
+
+## **Notes**
+- This algorithm uses a sliding window to find the longest matching sequence from earlier characters.
+- Instead of the sliding window with a serach buffer and look buffer of size more than one, this implementations
+    uses a sliding window which has a search buffer of size more than one and a look buffer of size one.
+- In this implementation the sliding window moves back and forth untill the match checking reaches the
+    first cell of the sliding window.
+- Which means it will make sure the longest sequence possible present in the serach buffer is used
+- This presents a problem, it will consume more time
+    - Sometimes going to the very start of the search buffer might not give a longer sequence
+        that what is already obtained.
+- Every sequece is encoded in the following format `<d,l,c>`, where
+    - `d` - distance to move back to reach the start of the matched sequece
+    - `l` - lenght of the matched sequence
+    - `c` - next character after the match
+
+## **Visualization**
+Here is a visualization of compressing the string `hello hello`
+- Yellow is search buffer
+- Green is look buffer
+
+![Demo](./demo.png)
